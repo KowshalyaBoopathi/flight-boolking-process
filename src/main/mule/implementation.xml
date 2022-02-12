@@ -5,7 +5,7 @@
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
-	<flow name="implementationFlow" doc:id="9eb11b64-caaf-49fb-acb8-9442816af348" >
+	<flow name="getHotels" doc:id="9eb11b64-caaf-49fb-acb8-9442816af348" >
 		<ee:transform doc:name="Transform Message" doc:id="498032ff-15bf-4334-b1e4-43f88e6252ee" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -18,15 +18,81 @@ ns ns0 http://www.bookmyhotel.com/Hotel/
 			</ee:message>
 		</ee:transform>
 		<wsc:consume doc:name="Consume" doc:id="0df0610a-f880-41de-abf0-102b08112855" config-ref="Web_Service_Consumer_Config" operation="GetHotels"/>
-		<ee:transform doc:name="Transform Message" doc:id="562474fe-ec77-4aa0-afe5-082ff8714ddb" >
+		<ee:transform doc:name="Transform Message" doc:id="b3be1d3e-5651-4977-a495-f12216a0141e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0ns ns0 http://www.bookmyhotel.com/Hotel/
+
+output application/json
+---
+payload.body.result.*Hotels map((item, index)->{	"Hotel ID": item.hotelId,	"Hotel Name": item.hotelName,	"Number of Rooms": item.rooms,	"Address": item.address,	"Food": item.food,	"Amenities": item.amenities,	"Payment":item.paymentTypes,	Ratings: item.rating		})]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="getHotelsById" doc:id="42846105-b89d-4ef8-a351-6f89374f1387" >
+		<ee:transform doc:name="Transform Message" doc:id="fb08d325-1b11-479d-96a0-f204f9ae555b" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
+output application/xml
 ns ns0 http://www.bookmyhotel.com/Hotel/
 ---
 {
-'Hotel Name': payload.body.ns0#GetHotelsResponse.Hotel.HotelName 
+	ns0#GetHotelById: {
+		HotelId: attributes.uriParams.hotelId
+	}
 }]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="Consume" doc:id="18ede7e7-ca83-4afe-b657-1207be21c14b" config-ref="Web_Service_Consumer_Config" operation="GetHotelById"/>
+		<ee:transform doc:name="Transform Message" doc:id="66ddebeb-0b25-4011-88f9-1a0498f6ea24" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+ns ns0 http://www.bookmyhotel.com/Hotel/
+output application/json
+---
+ {
+	"Hotel ID": payload.body.result.Hotels.hotelId,
+	"Hotel Name": payload.body.result.Hotels.hotelName,
+	"Number of Rooms": payload.body.result.Hotels.rooms,
+	"Address": payload.body.result.Hotels.address,
+	"Food": payload.body.result.Hotels.food,
+	"Amenities": payload.body.result.Hotels.amenities,
+	"Payment":payload.body.result.Hotels.paymentTypes,
+	Ratings: payload.body.result.Hotels.rating		
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="postHotels" doc:id="72710ce4-8581-40d7-818a-7b1205f322bd" >
+		<ee:transform doc:name="Transform Message" doc:id="f5f407db-1a11-47f8-93b4-5db0dfc02ac6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://www.bookmyhotel.com/Hotel/
+---
+{
+	ns0#PostHotel: {
+		Hotel: {
+			HotelId: payload.HotelId as Number default "0",
+			HotelName: payload.HotelName,
+			rating: payload.rating,
+			address: payload.address,
+			rooms: payload.rooms,
+			paymentType: payload.paymentType,
+			amenities: payload.amenities,
+			food: payload.food
+		}
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="PostHotel" doc:name="Consume" doc:id="e399cb4f-a72e-4f1b-8118-e65f87bedf55" config-ref="Web_Service_Consumer_Config"/>
+		<ee:transform doc:name="Transform Message" doc:id="225d6f87-1ee6-4dc1-aca5-53d9b60c2f3e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://www.bookmyhotel.com/Hotel/
+---
+payload.body.ns0#PostHotelResponse.ResponseMessage]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</flow>
